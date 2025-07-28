@@ -2,13 +2,20 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status, permissions
-from .permissions import *
-from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.pagination import LimitOffsetPagination
 from rest_framework.exceptions import NotFound
+
+from django_filters.rest_framework import DjangoFilterBackend
+from django.utils.decorators import method_decorator
+from django.views.decorators.csrf import csrf_exempt
+from django.db.models import Q
+
 from .models import *
 from .serializers import * 
-from django.db.models import Q
+from .permissions import *
+from .utils import *
+
+import json
 
 
 class ProductAPIView(APIView):
@@ -68,3 +75,33 @@ class ProductAPIView(APIView):
             return Response({"success": "Product deleted."}, status=204)
         except Product.DoesNotExist:
             raise NotFound("Product not found.")
+
+@method_decorator(csrf_exempt, name='dispatch')
+class ShopifyWebhookAPIView(APIView):
+    permission_classes = [permissions.AllowAny]  # You can change this if needed
+
+    def post(self, request, *args, **kwargs):
+        hmac_header = request.META.get('HTTP_X_SHOPIFY_HMAC_SHA256')
+        body = request.body.decode('utf-8')
+
+        if not is_valid_shopify_hmac(body, hmac_header):
+            return Response({'error': 'Invalid HMAC'}, status=status.HTTP_403_FORBIDDEN)
+
+        try:
+            payload = json.loads(body)
+            sku = payload.get('sku')
+            quantity = payload.get('quantity')
+
+            if not sku or quantity is None:
+                return Response({'error': 'Invalid payload data'}, status=status.HTTP_400_BAD_REQUEST)
+
+            product = Product.objects.get(sku=sku)
+            product.quantity = quantity
+            product.save()
+
+            return Response({'status': 'updated'}, status=status.HTTP_200_OK)
+
+        except Product.DoesNotExist:
+            return Response({'error': 'Product not found'}, status=status.HTTP_404_NOT_FOUND)
+        except json.JSONDecodeError:
+            return Response({'error': 'Invalid JSON'}, status=status.HTTP_400_BAD_REQUEST)

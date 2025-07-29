@@ -41,6 +41,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'rest_framework',
+    'django_celery_beat',
     'django_filters',
     'products',
 ]
@@ -90,7 +91,7 @@ DATABASES = {
         'NAME': 'test-sample',
         'USER': 'postgres',
         'PASSWORD': 'while(true){}',
-        'HOST': '127.0.0.1',
+        'HOST': 'db',
     }
 }
 
@@ -119,6 +120,8 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = 'en-us'
 
+CELERY_BROKER_URL = 'redis://redis:6379/0'
+
 TIME_ZONE = 'UTC'
 
 USE_I18N = True
@@ -136,7 +139,6 @@ STATIC_URL = 'static/'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-SECRET_KEY = os.getenv("SECRET_KEY", "fallback-secret-key")
 SHOPIFY_SHARED_SECRET = os.getenv("SHOPIFY_SHARED_SECRET")
 
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'

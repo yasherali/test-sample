@@ -4,10 +4,13 @@ from .models import Product
 from django.core.mail import send_mail
 from django.conf import settings
 from io import StringIO
+import os
+
+CSV_FILE_PATH = os.path.join(settings.BASE_DIR, 'mock_data/products.csv')
 
 @shared_task
 def import_csv_data():
-    with open('mock_data/products.csv', 'r') as f:
+    with open(CSV_FILE_PATH, 'r') as f:
         reader = csv.DictReader(f)
         rows = list(reader)
     return rows
@@ -28,4 +31,10 @@ def validate_and_update(data):
 @shared_task
 def generate_report_and_email(updated_count):
     body = f"{updated_count} products were updated in inventory."
-    send_mail("Inventory Update Report", body, settings.EMAIL_HOST_USER, ["admin@yopmail.com"])
+    send_mail(
+        subject="Inventory Update Report",
+        message=body,
+        from_email=settings.EMAIL_HOST_USER,
+        recipient_list=["admin@yopmail.com"],  # Update as needed
+        fail_silently=False
+    )

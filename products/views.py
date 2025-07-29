@@ -14,6 +14,8 @@ from .models import *
 from .serializers import * 
 from .permissions import *
 from .utils import *
+from .embedding_utils import *
+from .insights_utils import *
 
 import json
 
@@ -105,3 +107,25 @@ class ShopifyWebhookAPIView(APIView):
             return Response({'error': 'Product not found'}, status=status.HTTP_404_NOT_FOUND)
         except json.JSONDecodeError:
             return Response({'error': 'Invalid JSON'}, status=status.HTTP_400_BAD_REQUEST)
+        
+class SmartProductSearchAPIView(APIView):
+    def get(self, request):
+        query = request.GET.get('q')
+        if not query:
+            return Response({"error": "Missing 'q' parameter"}, status=status.HTTP_400_BAD_REQUEST)
+
+        product_ids = search_products_by_semantics(query)
+        products = Product.objects.filter(id__in=product_ids)
+        serialized = ProductSerializer(products, many=True)
+        return Response(serialized.data)
+    
+class ProductInsightsAPIView(APIView):
+    def get(self, request):
+        low_stock = get_low_stock_stats()
+        trending = get_trending_products()
+        trending_serialized = ProductSerializer(trending, many=True).data
+
+        return Response({
+            "low_stock_stats": low_stock,
+            "trending_products": trending_serialized
+        })

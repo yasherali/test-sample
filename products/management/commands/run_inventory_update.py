@@ -8,7 +8,6 @@ class Command(BaseCommand):
     def handle(self, *args, **kwargs):
         self.stdout.write(self.style.SUCCESS("Triggering nightly inventory update task chain..."))
 
-        # Trigger asynchronously using Celery
         chain(
             import_csv_data.s(),
             validate_and_update.s(),

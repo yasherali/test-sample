@@ -1,4 +1,3 @@
-# products/views.py
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status, permissions
@@ -80,7 +79,7 @@ class ProductAPIView(APIView):
 
 @method_decorator(csrf_exempt, name='dispatch')
 class ShopifyWebhookAPIView(APIView):
-    permission_classes = [permissions.AllowAny]  # You can change this if needed
+    permission_classes = [permissions.AllowAny] 
 
     def post(self, request, *args, **kwargs):
         hmac_header = request.META.get('HTTP_X_SHOPIFY_HMAC_SHA256')
